@@ -6,10 +6,6 @@ metadata:
   name: observer
 
 parameters:
-- name: CLIENT_NAME
-  description: 'Client prefix name'
-  required: true
-
 - name: HANDLE_EVENT_SLACK_WEBHOOK
   description: 'Slack channel webhook to send event messages to'
   required: true
