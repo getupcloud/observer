@@ -6,7 +6,7 @@ import requests
 
 DEBUG = bool(int(os.environ.get('DEBUG', 0) or os.environ.get('HANDLE_EVENT_DEBUG', 0)))
 channel = os.environ.get('HANDLE_EVENT_SLACK_CHANNEL')
-count_limit = int(os.environ.get('HANDLE_EVENT_COUNT_LIMIT', 10))
+freq = int(os.environ.get('HANDLE_EVENT_FREQ', 50))
 webhook = os.environ['HANDLE_EVENT_SLACK_WEBHOOK']
 
 event = json.loads(os.environ.get('object'))
@@ -43,6 +43,13 @@ reason = event['reason']
 if DEBUG:
     print(json.dumps(event, indent=3))
 
-if count >= count_limit:
-    if count % count_limit == 0:
-        post(event, channel).text
+if count % freq == 0:
+    print('Message sent to slack: {reason} x{count} {kind} {namespace}/{name}/{uid}: {message}'.format(
+        reason=event['reason'],
+        count=event['count'],
+        kind=event['involvedObject'].get('kind'),
+        namespace=event['involvedObject'].get('namespace'),
+        name=event['involvedObject'].get('name'),
+        uid=event['involvedObject'].get('uid'),
+        message=event['message']))
+    post(event, channel).text

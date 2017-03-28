@@ -18,9 +18,9 @@ parameters:
   description: 'Slack channel name to send event messages to'
   value: 'errors'
 
-- name: HANDLE_EVENT_COUNT_LIMIT
-  description: 'How many error events to account for'
-  value: '20'
+- name: HANDLE_EVENT_FREQ
+  description: 'Error events frequency to account for'
+  value: '50'
   required: true
 
 - name: APPS_DOMAIN
@@ -111,8 +111,8 @@ objects:
             value: "3.5"
           - name: HANDLE_EVENT_SLACK_WEBHOOK
             value: ${HANDLE_EVENT_SLACK_WEBHOOK}
-          - name: HANDLE_EVENT_COUNT_LIMIT
-            value: ${HANDLE_EVENT_COUNT_LIMIT}
+          - name: HANDLE_EVENT_FREQ
+            value: ${HANDLE_EVENT_FREQ}
           - name: HANDLE_EVENT_SLACK_CHANNEL
             value: "#${HANDLE_EVENT_SLACK_CHANNEL}"
           image: observer
