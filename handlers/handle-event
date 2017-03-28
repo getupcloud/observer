@@ -4,7 +4,7 @@ import os, sys
 import json
 import requests
 
-DEBUG = bool(int(os.environ.get('HANDLE_EVENT_DEBUG', 0)))
+DEBUG = bool(int(os.environ.get('DEBUG', 0) or os.environ.get('HANDLE_EVENT_DEBUG', 0)))
 channel = os.environ.get('HANDLE_EVENT_SLACK_CHANNEL')
 count_limit = int(os.environ.get('HANDLE_EVENT_COUNT_LIMIT', 10))
 webhook = os.environ['HANDLE_EVENT_SLACK_WEBHOOK']
