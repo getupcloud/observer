@@ -1,0 +1,98 @@
+#!/bin/bash
+
+set -e
+
+HEALTH_PORT=${HEALTH_PORT:-11251}
+
+if [ -z "$TOKEN" ]; then
+    export TOKEN=$(</var/run/secrets/kubernetes.io/serviceaccount/token)
+fi
+
+namespace='--all-namespaces'
+resourceName=''
+no_sync=0
+no_list=0
+no_delete=0
+
+# parse params
+for param; do
+    case $param in
+        --no-sync) no_sync=1;;
+        --no-list) no_list=1;;
+        --no-delete) no_delete=1;;
+        --namespace|-n) namespace="-n $2"; shift;;
+        *)
+            if [ -n "$resourceName" ]; then
+                echo "Too many arguments"
+                exit 1
+            fi
+            resourceName=$1
+    esac
+    shift
+done
+
+if [ -z "$resourceName" ]; then
+    echo 'Missing resource name (ex: pod)'
+    exit 1
+fi
+
+# remove plural
+if [ "${resourceName%ies}" != "${resourceName}" ]; then
+    resourceName=${resourceName%ies}
+elif [ "${resourceName%s}" != "${resourceName}" ]; then
+    resourceName=${resourceName%s}
+fi
+
+# default arguments
+arguments=(
+    --argument "'HOME=$HOME'" \
+    --argument "'TOKEN=$TOKEN'" \
+    --argument "kind={.kind}" \
+    --argument "'uid={.metadata.uid}'" \
+    --argument "'creationTimestamp={.metadata.creationTimestamp}'" \
+    --argument "'resourceName=$resourceName'"
+)
+
+if [ "$no_sync" == 1 ]; then
+    n=${#arguments[*]}
+    arguments[$n]="--argument 'NO_SYNC=1'"
+fi
+
+# pass all HANDLE_${RESOURCE} env to handler
+for e in $(env | grep ^HANDLE_${resourceName^^} | sort); do
+    n=${#arguments[*]}
+    arguments[$n]="--argument '$e'"
+done
+
+list_arguments=''
+if [ "$no_list" != 1 ]; then
+    list_arguments=(
+        --names ./dispatcher
+        --names list
+        --names "'$resourceName'"
+    )
+fi
+
+delete_arguments=''
+if [ "$no_delete" != 1 ]; then
+    delete_arguments=(--delete ./dispatcher)
+fi
+
+set -eu
+
+echo "$(date): Started observer[$resourceName]"
+exec oc \
+    observe \
+    $resourceName \
+    $namespace \
+    --token="$TOKEN" \
+    --type-env-var=event \
+    --object-env-var=object\
+    --maximum-errors=-1 \
+    --retry-count=3 \
+    --no-headers \
+    --listen-addr=":$HEALTH_PORT" \
+    ${arguments[@]} \
+    ${list_arguments[@]} \
+    ${delete_arguments[@]} \
+    -- ./dispatcher

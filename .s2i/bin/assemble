@@ -1,0 +1,13 @@
+#!/bin/bash
+
+set -xe
+
+source $STI_SCRIPTS_PATH/assemble
+
+OC_URL="https://github.com/openshift/origin/releases/download/v1.4.1/openshift-origin-client-tools-v1.4.1-3f9807a-linux-64bit.tar.gz"
+OC_PATH="openshift-origin-client-tools-v1.4.1+3f9807a-linux-64bit/oc"
+
+curl -L "$OC_URL" | tar xzvf - "$OC_PATH"
+mkdir -p /opt/app-root/src/bin
+mv "$OC_PATH" /opt/app-root/src/bin
+rm -rf openshift-origin-client-tools-v1.4.1+3f9807a-linux-64bit/

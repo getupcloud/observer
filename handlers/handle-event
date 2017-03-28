@@ -1,0 +1,51 @@
+#!/usr/bin/env python
+
+import os, sys
+import json
+import requests
+
+DEBUG = bool(int(os.environ.get('HANDLE_EVENT_DEBUG', 0)))
+channel = os.environ.get('HANDLE_EVENT_SLACK_CHANNEL')
+count_limit = int(os.environ.get('HANDLE_EVENT_COUNT_LIMIT', 10))
+webhook = os.environ['HANDLE_EVENT_SLACK_WEBHOOK']
+
+event = json.loads(os.environ.get('object'))
+
+event_type = event['type']
+
+if event_type != 'Warning':
+    sys.exit(0)
+
+def post(event, channel=None):
+    payload = {
+        'username': event['reason'],
+        'text': 'Seen {count} times in {namespace}/{name}'.format(
+                count=event['count'],
+                namespace=event['involvedObject']['namespace'],
+                name=event['involvedObject']['name']),
+        'attachments': [
+            {
+                #"title": "App hangs on reboot",
+                #"title_link": "http://domain.com/ticket/123456",
+                'text': event['message'],
+            }
+        ]
+    }
+
+    if channel:
+        payload['channel'] = channel
+
+    return requests.post(url=webhook, headers={'content-type':'application/json'}, data=json.dumps(payload))
+
+count = event['count']
+reason = event['reason']
+
+if DEBUG:
+    print(json.dumps(event, indent=3))
+
+if count >= count_limit:
+    if count % count_limit == 0:
+        print(post(event, channel).text)
+#else:
+#    print(json.dumps(event, indent=3))
+#    print(post(event, channel).text)

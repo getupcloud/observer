@@ -1,0 +1,16 @@
+#!/bin/bash
+
+case "$event" in
+    Added|Sync) method=POST;;
+    Updated) method=PUT;;
+    Deleted) method=DELETE;;
+esac
+export method
+
+export namespace_uid=`oc get "namespaces/$namespace" --template='{{.metadata.uid}}' --token="$TOKEN"`
+exec curl -s http://$store_host:$store_port/${uid} \
+    -X$method \
+    -H 'Content-type:application/json' \
+    --data "{\"namespace_uid\":\"$namespace_uid\", \"object\": $object}"
+#    >/dev/null
+

@@ -1,0 +1,51 @@
+#!/bin/bash
+
+params=()
+
+for param; do
+    case "$param" in
+        *=*) eval export $param;;
+        *) params[${#params[*]}]="$param"
+    esac
+done
+
+if [ "$event" == Sync -a "$NO_SYNC" == 1 ]; then
+    exit
+fi
+
+if [ "$1" == 'list' ]; then
+    if [ "$2" == 'events' ] || [ $# -eq 2 ]; then
+        exit 0
+    fi
+    resource_name=$2
+    echo "Retrieving stored resources" >&2
+    exec curl -s http://$store_host:$store_port/$resource_name
+fi
+
+if [ ${#params[*]} -eq 1 ]; then
+    export name=$1
+elif [ ${#params[*]} -eq 2 ]; then
+    export namespace=$1
+    export name=$2
+fi
+
+# find handler
+handler=handlers/handle-${kind,,}
+if [ ! -e "$handler" ]; then
+    # fallback handler
+    handler=handlers/handle-any
+fi
+
+if [ -n "${namespace}" ]; then
+    echo "$creationTimestamp $event $kind[$uid] $namespace/$name $handler"
+else
+    echo "$creationTimestamp $event $kind[$uid] $namespace/$name $handler"
+fi
+
+if [ -e .env/bin/activate ]; then
+    source .env/bin/activate
+elif [ -e /opt/app-root/etc/scl_enable ]; then
+    source /opt/app-root/etc/scl_enable
+fi
+
+exec $handler
