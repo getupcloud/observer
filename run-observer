@@ -2,7 +2,7 @@
 
 set -e
 
-HEALTH_PORT=${HEALTH_PORT:-11251}
+HEALTH_PORT=${HEALTH_PORT:-8080}
 
 if [ -z "$TOKEN" ]; then
     export TOKEN=$(</var/run/secrets/kubernetes.io/serviceaccount/token)
