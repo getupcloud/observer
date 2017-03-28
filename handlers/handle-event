@@ -45,7 +45,4 @@ if DEBUG:
 
 if count >= count_limit:
     if count % count_limit == 0:
-        print(post(event, channel).text)
-#else:
-#    print(json.dumps(event, indent=3))
-#    print(post(event, channel).text)
+        post(event, channel).text

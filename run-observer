@@ -45,6 +45,7 @@ fi
 
 # default arguments
 arguments=(
+    --argument "'DEBUG=${DEBUG:-0}'"
     --argument "'HOME=$HOME'" \
     --argument "'TOKEN=$TOKEN'" \
     --argument "kind={.kind}" \

@@ -14,11 +14,11 @@ if [ "$event" == Sync -a "$NO_SYNC" == 1 ]; then
 fi
 
 if [ "$1" == 'list' ]; then
-    if [ "$2" == 'events' ] || [ $# -eq 2 ]; then
+    if [ "$2" == 'event' ] || [ $# -eq 2 ]; then
         exit 0
     fi
     resource_name=$2
-    echo "Retrieving stored resources" >&2
+    echo "Retrieving stored resources $resources_name" >&2
     exec curl -s http://$store_host:$store_port/$resource_name
 fi
 
@@ -36,10 +36,12 @@ if [ ! -e "$handler" ]; then
     handler=handlers/handle-any
 fi
 
-if [ -n "${namespace}" ]; then
-    echo "$creationTimestamp $event $kind[$uid] $namespace/$name $handler"
-else
-    echo "$creationTimestamp $event $kind[$uid] $namespace/$name $handler"
+if [ "$DEBUG" == 1 ]; then
+    if [ -n "${namespace}" ]; then
+        echo "$creationTimestamp $event $kind[$uid] $namespace/$name $handler"
+    else
+        echo "$creationTimestamp $event $kind[$uid] $namespace/$name $handler"
+    fi
 fi
 
 if [ -e .env/bin/activate ]; then

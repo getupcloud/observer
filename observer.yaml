@@ -14,10 +14,9 @@ parameters:
   description: 'Slack channel webhook to send event messages to'
   required: true
 
-- name: HANDLE_EVENT_SLACK_CHANNEL_PREFIX
-  description: 'Slack channel name prfix to send event messages to'
-  value: 'error'
-  required: true
+- name: HANDLE_EVENT_SLACK_CHANNEL
+  description: 'Slack channel name to send event messages to'
+  value: 'errors'
 
 - name: HANDLE_EVENT_COUNT_LIMIT
   description: 'How many error events to account for'
@@ -114,8 +113,8 @@ objects:
             value: ${HANDLE_EVENT_SLACK_WEBHOOK}
           - name: HANDLE_EVENT_COUNT_LIMIT
             value: ${HANDLE_EVENT_COUNT_LIMIT}
-          - name: HANDLE_EVENT_SLACK_CHANNEL_PREFIX
-            value: "#${HANDLE_EVENT_SLACK_CHANNEL_PREFIX}-${CLIENT_NAME}"
+          - name: HANDLE_EVENT_SLACK_CHANNEL
+            value: "#${HANDLE_EVENT_SLACK_CHANNEL}"
           image: observer
           imagePullPolicy: Always
           name: python
