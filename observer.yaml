@@ -1,0 +1,194 @@
+apiVersion: v1
+kind: Template
+labels:
+  template: observer
+metadata:
+  name: observer
+
+parameters:
+- name: CLIENT_NAME
+  description: 'Client prefix name'
+  required: true
+
+- name: HANDLE_EVENT_SLACK_WEBHOOK
+  description: 'Slack channel webhook to send event messages to'
+  required: true
+
+- name: HANDLE_EVENT_SLACK_CHANNEL_PREFIX
+  description: 'Slack channel name prfix to send event messages to'
+  value: 'error'
+  required: true
+
+- name: HANDLE_EVENT_COUNT_LIMIT
+  description: 'How many error events to account for'
+  value: '20'
+  required: true
+
+- name: APPS_DOMAIN
+  description: 'Domain suffix for clustered applications'
+  required: true
+
+objects:
+- apiVersion: v1
+  kind: ServiceAccount
+  metadata:
+    name: observer
+
+- apiVersion: v1
+  kind: BuildConfig
+  metadata:
+    annotations:
+    labels:
+      app: observer
+      template: observer
+    name: observer
+  spec:
+    output:
+      to:
+        kind: ImageStreamTag
+        name: observer:latest
+    resources:
+      limits:
+        cpu: 1170m
+        memory: 4Gi
+      requests:
+      cpu: 293m
+      memory: 2Gi
+    runPolicy: Serial
+    source:
+      contextDir: /
+      git:
+        ref: master
+        uri: https://github.com/getupcloud/observer.git
+      type: Git
+    strategy:
+      sourceStrategy:
+        from:
+          kind: ImageStreamTag
+          name: python:3.5
+          namespace: openshift
+      type: Source
+    triggers:
+    - type: ImageChange
+    - type: ConfigChange
+
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    annotations:
+    labels:
+      app: observer
+      template: observer
+    name: observer
+  spec:
+    replicas: 1
+    selector:
+      deploymentconfig: observer
+    strategy:
+      type: Recreate
+    template:
+      metadata:
+        labels:
+          app: observer
+          deploymentconfig: observer
+      spec:
+        containers:
+        - env:
+          - name: PATH
+            value: /opt/app-root/src/.local/bin/:/opt/app-root/src/bin:/opt/app-root/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+          - name: STI_SCRIPTS_URL
+            value: image:///usr/libexec/s2i
+          - name: STI_SCRIPTS_PATH
+            value: /usr/libexec/s2i
+          - name: HOME
+            value: /opt/app-root/src
+          - name: BASH_ENV
+            value: /opt/app-root/etc/scl_enable
+          - name: ENV
+            value: /opt/app-root/etc/scl_enable
+          - name: PROMPT_COMMAND
+            value: . /opt/app-root/etc/scl_enable
+          - name: PYTHON_VERSION
+            value: "3.5"
+          - name: HANDLE_EVENT_SLACK_WEBHOOK
+            value: ${HANDLE_EVENT_SLACK_WEBHOOK}
+          - name: HANDLE_EVENT_COUNT_LIMIT
+            value: ${HANDLE_EVENT_COUNT_LIMIT}
+          - name: HANDLE_EVENT_SLACK_CHANNEL_PREFIX
+            value: "#${HANDLE_EVENT_SLACK_CHANNEL_PREFIX}-${CLIENT_NAME}"
+          image: observer
+          imagePullPolicy: Always
+          name: python
+          ports:
+          - containerPort: 8080
+            protocol: TCP
+          resources:
+            limits:
+              cpu: 731m
+              memory: 1Gi
+            requests:
+              cpu: 18m
+              memory: 256Mi
+          terminationMessagePath: /dev/termination-log
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        securityContext: {}
+        serviceAccount: observer
+        serviceAccountName: observer
+        terminationGracePeriodSeconds: 30
+    triggers:
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+        - python
+        from:
+          kind: ImageStreamTag
+          name: observer:latest
+          namespace: getup
+      type: ImageChange
+    - type: ConfigChange
+
+- apiVersion: v1
+  kind: ImageStream
+  metadata:
+    name: observer
+  labels:
+    app: observer
+    template: observer
+
+- apiVersion: v1
+  kind: Service
+  metadata:
+    labels:
+      app: observer
+      template: observer
+    name: observer
+  spec:
+    ports:
+    - name: 8080-tcp
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+    selector:
+      deploymentconfig: observer
+    sessionAffinity: None
+    type: ClusterIP
+
+- apiVersion: v1
+  kind: Route
+  metadata:
+    annotations:
+    labels:
+      app: observer
+      template: observer
+    name: observer
+  spec:
+    host: observer-getup.${APPS_DOMAIN}
+    port:
+      targetPort: 8080-tcp
+    tls:
+      insecureEdgeTerminationPolicy: Allow
+      termination: edge
+    to:
+      kind: Service
+      name: observer
