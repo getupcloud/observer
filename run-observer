@@ -43,9 +43,12 @@ elif [ "${resourceName%s}" != "${resourceName}" ]; then
     resourceName=${resourceName%s}
 fi
 
+LOG_LEVEL=${LOG_LEVEL:-1}
+
 # default arguments
 arguments=(
     --argument "'DEBUG=${DEBUG:-0}'"
+    --argument "'LOG_LEVEL=${LOG_LEVEL}'"
     --argument "'HOME=$HOME'" \
     --argument "'TOKEN=$TOKEN'" \
     --argument "kind={.kind}" \
@@ -86,6 +89,7 @@ exec oc \
     observe \
     $resourceName \
     $namespace \
+    --loglevel=${LOG_LEVEL} \
     --token="$TOKEN" \
     --type-env-var=event \
     --object-env-var=object\
