@@ -8,7 +8,6 @@ if [ -z "$TOKEN" ]; then
     export TOKEN=$(</var/run/secrets/kubernetes.io/serviceaccount/token)
 fi
 
-namespace='--all-namespaces'
 resourceName=''
 no_sync=0
 no_list=0
@@ -20,7 +19,7 @@ while [ $# -gt 0 ]; do
         --no-sync) no_sync=1;;
         --no-list) no_list=1;;
         --no-delete) no_delete=1;;
-        --namespace|-n) namespace="-n $2"; shift;;
+        --namespace|-n) namespace="$2"; shift;;
         *)
             if [ -n "$resourceName" ]; then
                 echo "Too many arguments"
@@ -80,6 +79,14 @@ fi
 delete_arguments=''
 if [ "$no_delete" != 1 ]; then
     delete_arguments=(--delete ./dispatcher)
+fi
+
+if [ -z "${namespace}" ]; then
+    namespace='--all-namespaces'
+else
+    echo Changing to namespace $namespace
+    oc project $namespace
+    namespace="-n $namespace"
 fi
 
 set -eu
