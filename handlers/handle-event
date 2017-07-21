@@ -8,12 +8,12 @@ DEBUG = bool(int(os.environ.get('DEBUG', 0) or os.environ.get('HANDLE_EVENT_DEBU
 channel = os.environ.get('HANDLE_EVENT_SLACK_CHANNEL')
 freq = int(os.environ.get('HANDLE_EVENT_FREQ', 50))
 webhook = os.environ['HANDLE_EVENT_SLACK_WEBHOOK']
-
+event_type_filters = [ et.strip().lower() for et in os.environ.get('HANDLE_EVENT_TYPES', 'warning').split(',') ] or ['*']
 event = json.loads(os.environ.get('object'))
 
-event_type = event['type']
+event_type = event['type'].lower()
 
-if event_type != 'Warning':
+if event_type_filters[0] != '*' and event_type not in event_type_filters:
     sys.exit(0)
 
 def post(event, channel=None):
