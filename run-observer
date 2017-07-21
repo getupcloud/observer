@@ -15,8 +15,8 @@ no_list=0
 no_delete=0
 
 # parse params
-for param; do
-    case $param in
+while [ $# -gt 0 ]; do
+    case $1 in
         --no-sync) no_sync=1;;
         --no-list) no_list=1;;
         --no-delete) no_delete=1;;
